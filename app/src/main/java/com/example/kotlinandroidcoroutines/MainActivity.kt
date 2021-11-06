@@ -3,25 +3,34 @@ package com.example.kotlinandroidcoroutines
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import com.example.kotlinandroidcoroutines.databinding.ActivityMainBinding
+import kotlinx.coroutines.*
 
 const val TAG:String = "MainActivity"
 
 class MainActivity : AppCompatActivity() {
 
+    lateinit var binding: ActivityMainBinding
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        //if during coroutine executing, when the main thread is destroyed
-        //then the coroutine will be cancel immediately!!
-        GlobalScope.launch {
-            delay(5000L)
-            Log.d(TAG, "Thread on Global Scope ${Thread.currentThread().name}")
+
+        //Do network call on IO thread, after get the result then update to Main thread UI views
+        GlobalScope.launch(Dispatchers.IO) {
+            Log.d(TAG, "Starting coroutine result in thread: ${Thread.currentThread().name}")
+            val result = doNetworkCall()
+            withContext(Dispatchers.Main){
+                Log.d(TAG, "Setting result in thread: ${Thread.currentThread().name}")
+                binding.tv1.text = result
+            }
         }
-
-        Log.d(TAG, "Thread on MainActivity ${Thread.currentThread().name}")
     }
+
+    suspend fun doNetworkCall():String{
+        delay(3000L)
+        return "doNetWorkResult"
+    }
+
 }
